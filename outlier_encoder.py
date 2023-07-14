@@ -155,15 +155,15 @@ class OutlierEncoder(TransformerMixin, BaseEstimator):
 
     def _do_floor(self, X: pd.DataFrame, col: str, thr: float):
         new_col: str = self._floored_name(col)
-        X[new_col] = X[col] < thr
+        X[new_col] = (X[col] < thr).astype(int)
         if self.fill_na is not None:
-            X.loc[X[new_col], col] = self.fill_na
+            X.loc[X[new_col].astype(bool), col] = self.fill_na
 
     def _do_ceil(self, X: pd.DataFrame, col: str, thr: float):
         new_col: str = self._ceiled_name(col)
-        X[new_col] = X[col] > thr
+        X[new_col] = (X[col] > thr).astype(int)
         if self.fill_na is not None:
-            X.loc[X[new_col], col] = self.fill_na
+            X.loc[X[new_col].astype(bool), col] = self.fill_na
 
     def transform(self, X):
         if not isinstance(X, pd.DataFrame):
