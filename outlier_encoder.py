@@ -147,11 +147,11 @@ class OutlierEncoder(TransformerMixin, BaseEstimator):
 
     @staticmethod
     def _floored_name(col: str):
-        return f'{col.strip()}_floored'
+        return f'dummy {col.strip()}_floored'
 
     @staticmethod
     def _ceiled_name(col: str):
-        return f'{col.strip()}_ceiled'
+        return f'dummy {col.strip()}_ceiled'
 
     def _do_floor(self, X: pd.DataFrame, col: str, thr: float):
         new_col: str = self._floored_name(col)
