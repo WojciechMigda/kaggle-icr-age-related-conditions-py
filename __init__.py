@@ -1,3 +1,5 @@
 from .outlier_encoder import OutlierEncoder
 from .distribution_transformer import DistributionTransformer
+from .proper_logistic_regression import ProperLogisticRegression
+
 from .loss_function import balanced_log_loss
