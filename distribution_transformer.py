@@ -7,9 +7,11 @@ from sklearn.base import (
     OneToOneFeatureMixin, # Provides get_feature_names_out for simple transformers.
     TransformerMixin,
     BaseEstimator)
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import PowerTransformer
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import MinMaxScaler
+from .min_shift_scaler import MinShiftScaler
 from sklearn.pipeline import make_pipeline
 
 import numpy as np
@@ -102,7 +104,7 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
         "copy": ["boolean"],
     }
 
-    def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox', 'quantile'], n_quantiles=1000, random_state=None, copy=True):
+    def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile'], n_quantiles=1000, random_state=None, copy=True):
         self.transforms = transforms
         self.n_quantiles = n_quantiles
         self.random_state = random_state
@@ -121,7 +123,7 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
     def _validate_transforms(self):
         if not self.transforms:
             return
-        allowed = ('original', 'yeo-johnson', 'box-cox', 'quantile')
+        allowed = ('original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile')
         for xform in self.transforms:
             if xform not in allowed:
                 raise TypeError(
@@ -139,9 +141,26 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
         dist = stats.distributions.norm
         transformers = {
             'yeo-johnson' : PowerTransformer(method="yeo-johnson"),
-            'box-cox' : make_pipeline(
+            'box-cox-0-1' : make_pipeline(
+                # "Box-Cox requires input data to be strictly positive"
+                MinMaxScaler((1e-15, 1), copy=True),
+                FunctionTransformer(np.clip, kw_args={'a_min': 1e-15, 'a_max': None}),
+                PowerTransformer(method="box-cox", copy=False)
+            ),
+            'box-cox-1-2' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
                 MinMaxScaler((1, 2), copy=True),
+                FunctionTransformer(np.clip, kw_args={'a_min': 1e-15, 'a_max': None}),
+                PowerTransformer(method="box-cox", copy=False)
+            ),
+            'box-cox-0' : make_pipeline(
+                # "Box-Cox requires input data to be strictly positive"
+                MinShiftScaler(offset=1e-15, clip=True, copy=True),
+                PowerTransformer(method="box-cox", copy=False)
+            ),
+            'box-cox-1' : make_pipeline(
+                # "Box-Cox requires input data to be strictly positive"
+                MinShiftScaler(offset=1., clip=True, copy=True),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'quantile' : QuantileTransformer(n_quantiles=self.n_quantiles, output_distribution="normal", random_state=self.random_state),
@@ -157,14 +176,11 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
             osm = dist.ppf(osm_uniform)
 
             for rix, xform in enumerate(self.transforms):
-                if xform == 'yeo-johnson':
-                    osr = np.sort(transformers[xform].fit_transform(Xi), axis=0)
-                elif xform == 'box-cox':
-                    osr = np.sort(transformers[xform].fit_transform(Xi), axis=0)
-                elif xform == 'quantile':
-                    osr = np.sort(transformers[xform].fit_transform(Xi), axis=0)
-                else:
+                if xform == 'original':
                     osr = np.sort(Xi, axis=0)
+                else:
+                    osr = np.sort(transformers[xform].fit_transform(Xi), axis=0)
+
                 Ri, _ = stats.pearsonr(osr.ravel(), osm)
                 Rs[rix, cix] = Ri
 
@@ -184,3 +200,16 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
                 X[:, cix] = xformer.fit_transform(np.atleast_2d(X[:, cix]).T).ravel()
 
         return X
+
+
+def distribution_transformer_results(scaler, feature_names):
+    if hasattr(scaler, "winners_"):
+        import pandas as pd
+        r_scores = pd.DataFrame(scaler.Rs_, index=scaler.transforms, columns=feature_names).T
+        r_scores["Winner"] = r_scores.idxmax(axis=1)
+        r_scores["R Best"] = r_scores.max(axis=1, numeric_only=True)
+        return r_scores
+    else:
+        import warnings
+        warnings.warn(f"{scaler.__class__.__name__} was not fitted.")
+        return
