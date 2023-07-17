@@ -10,7 +10,7 @@ class OutlierEncoder(TransformerMixin, BaseEstimator):
     def __init__(self, fill_na=np.nan):
         self.fill_na = fill_na
 
-    def fit(self, X):
+    def fit(self, X, y=None):
         return self
 
     @property
