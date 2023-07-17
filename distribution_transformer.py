@@ -129,7 +129,7 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
                 raise TypeError(
                     f"Elements of transforms parameter must be one of {{{', '.join(allowed)}}}"
                 )
-        
+
     def fit(self, X, y=None):
         self._validate_params()
         self._validate_transforms()
