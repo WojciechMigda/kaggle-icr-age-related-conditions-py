@@ -106,7 +106,7 @@ class MinShiftScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
 
         X = X - self.data_min_ + self.offset
         if self.clip:
-            np.clip(X, 0, np.inf, out=X)
+            np.clip(X, 1e-15, np.inf, out=X)
         return X
 
     def inverse_transform(self, X):
