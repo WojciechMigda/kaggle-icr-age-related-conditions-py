@@ -13,6 +13,7 @@ from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import MinMaxScaler
 from .min_shift_scaler import MinShiftScaler
 from sklearn.pipeline import make_pipeline
+from sklearn.base import clone as clone_estimator
 
 import numpy as np
 from scipy import stats
@@ -102,13 +103,15 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
         "n_quantiles": [Interval(Integral, 1, None, closed="left")],
         "random_state": ["random_state"],
         "copy": ["boolean"],
+        "verbose": ["boolean"],
     }
 
-    def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile'], n_quantiles=1000, random_state=None, copy=True):
+    def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile'], n_quantiles=1000, random_state=None, copy=True, verbose=False):
         self.transforms = transforms
         self.n_quantiles = n_quantiles
         self.random_state = random_state
         self.copy = copy
+        self.verbose = verbose
 
     def _check_input(self, X, *, in_fit: bool):
         from sklearn.utils.validation import FLOAT_DTYPES
@@ -155,19 +158,19 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
             ),
             'box-cox-0' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
-                MinShiftScaler(offset=1e-15, clip=True, copy=True),
+                MinShiftScaler(offset=1e-15, clip=True, copy=True, verbose=self.verbose),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'box-cox-1' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
-                MinShiftScaler(offset=1., clip=True, copy=True),
+                MinShiftScaler(offset=1., clip=True, copy=True, verbose=self.verbose),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'quantile' : QuantileTransformer(n_quantiles=self.n_quantiles, output_distribution="normal", random_state=self.random_state),
         }
 
         X = self._check_input(X, in_fit=True)
-        
+
         for cix in range(X.shape[1]):
             Xi = X[:, cix]
             Xi = Xi[~np.isnan(Xi)]
@@ -186,18 +189,35 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
 
         self.winners_ = np.argmax(Rs, axis=0)
         self.Rs_ = Rs
-        self.transformers_ = [transformers.get(name, None) for name in self.transforms]
+
+        estimators = [None] * X.shape[1]
+        for cix in range(X.shape[1]):
+            Xi = X[:, cix]
+            Xi = np.atleast_2d(Xi).T
+            xformer = transformers.get(self.transforms[self.winners_[cix]], None)
+            if xformer is None:
+                # already None in estimators[cix]
+                continue
+            xformer = clone_estimator(xformer)
+            xformer.fit(Xi)
+            estimators[cix] = xformer
+        self.estimators_ = estimators
 
         return self
 
     def transform(self, X):
+        if self.verbose:
+            print(f"[{self.__class__.__name__}] Transforming matrix with shape {X.shape}")
         X = self._check_input(X, in_fit=False)
 
         for cix in range(X.shape[1]):
-            winner: int = self.winners_[cix]
-            xformer = self.transformers_[winner]
+            xformer = self.estimators_[cix]
             if xformer is not None:
-                X[:, cix] = xformer.fit_transform(np.atleast_2d(X[:, cix]).T).ravel()
+                try:
+                    X[:, cix] = xformer.transform(np.atleast_2d(X[:, cix]).T).ravel()
+                except ValueError as ex:
+                    print(f"Transformer {xformer} failed for column {cix}, Xi={X[:, cix]}")
+                    raise
 
         return X
 
