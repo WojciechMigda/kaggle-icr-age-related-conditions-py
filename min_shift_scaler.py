@@ -17,12 +17,14 @@ class MinShiftScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         "offset": [Interval(Real, 0, None, closed="neither")], # (offset, +∞)
         "copy": ["boolean"],
         "clip": ["boolean"],
+        "verbose" : ["boolean"],
     }
 
-    def __init__(self, offset=1, *, copy=True, clip=True):
+    def __init__(self, offset=1, *, copy=True, clip=True, verbose=False):
         self.offset = offset
         self.copy = copy
         self.clip = clip
+        self.verbose = verbose
 
     def _reset(self):
         """Reset internal data-dependent state of the scaler, if necessary.
@@ -94,6 +96,8 @@ class MinShiftScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         Xt : ndarray of shape (n_samples, n_features)
             Transformed data.
         """
+        if self.verbose:
+            print(f"[{self.__class__.__name__}] Transforming matrix with shape {X.shape}")
         check_is_fitted(self)
 
         X = self._validate_data(
@@ -107,6 +111,8 @@ class MinShiftScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         X = X - self.data_min_ + self.offset
         if self.clip:
             np.clip(X, 1e-15, np.inf, out=X)
+        #if self.verbose:
+        #    print(f"{self.__class__.__name__} transform result feature range: ({np.nanmin(X)}, {np.nanmax(X)})")
         return X
 
     def inverse_transform(self, X):
