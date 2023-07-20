@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import os
+os.environ['PYTHONWARNINGS']='ignore::DeprecationWarning,ignore:n_quantiles:UserWarning'
+
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning, message=".*Bins whose width are too small.*")
