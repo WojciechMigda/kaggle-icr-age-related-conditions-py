@@ -8,3 +8,5 @@ from .min_shift_scaler import MinShiftScaler
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
+
+from .dataset_columns import COL_X_NUM, COL_X_CAT
