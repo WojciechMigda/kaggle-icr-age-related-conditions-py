@@ -9,6 +9,7 @@ from .identity_transformer import IdentityTransformer
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
+from .cached_estimator import make_cached_estimator
 
 from .dataset_columns import COL_X_NUM, COL_X_CAT
 
