@@ -5,6 +5,7 @@ from .distribution_transformer import (
 from .proper_logistic_regression import ProperLogisticRegression
 from .proper_polynomial_features import ProperPolynomialFeatures
 from .min_shift_scaler import MinShiftScaler
+from .identity_transformer import IdentityTransformer
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
