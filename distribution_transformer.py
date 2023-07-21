@@ -174,6 +174,16 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
         for cix in range(X.shape[1]):
             Xi = X[:, cix]
             Xi = Xi[~np.isnan(Xi)]
+            # check if input is not all equal values
+            if len(Xi) == 0 or np.all(Xi == Xi[0]):
+                # force-select 'original'
+                for rix, xform in enumerate(self.transforms):
+                    if xform == 'original':
+                        Rs[rix, cix] = 1
+                    else:
+                        Rs[rix, cix] = 0
+                continue
+
             osm_uniform = _calc_uniform_order_statistic_medians(len(Xi))
             Xi = np.atleast_2d(Xi).T
             osm = dist.ppf(osm_uniform)
