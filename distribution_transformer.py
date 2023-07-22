@@ -106,7 +106,10 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
         "verbose": ["boolean"],
     }
 
-    def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile'], n_quantiles=1000, random_state=None, copy=True, verbose=False):
+    #def __init__(self, transforms=['original', 'yeo-johnson', 'box-cox-0-1', 'box-cox-1-2', 'box-cox-0', 'box-cox-1', 'quantile'], n_quantiles=1000, random_state=None, copy=True, verbose=False):
+    def __init__(self, transforms=['original', 'yeo-johnson', 'quantile'], n_quantiles=1000, random_state=None, copy=True, verbose=False):
+        """Box-cox can lead to numerical instability when transforming withheld data.
+        """
         self.transforms = transforms
         self.n_quantiles = n_quantiles
         self.random_state = random_state
@@ -146,19 +149,19 @@ class DistributionTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstima
             'yeo-johnson' : PowerTransformer(method="yeo-johnson"),
             'box-cox-0-1' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
-                MinMaxScaler((1e-15, 1), copy=True),
-                FunctionTransformer(np.clip, kw_args={'a_min': 1e-15, 'a_max': None}),
+                MinMaxScaler((1e-8, 1), copy=True),
+                FunctionTransformer(np.clip, kw_args={'a_min': 1e-8, 'a_max': None}),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'box-cox-1-2' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
                 MinMaxScaler((1, 2), copy=True),
-                FunctionTransformer(np.clip, kw_args={'a_min': 1e-15, 'a_max': None}),
+                FunctionTransformer(np.clip, kw_args={'a_min': 1e-8, 'a_max': None}),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'box-cox-0' : make_pipeline(
                 # "Box-Cox requires input data to be strictly positive"
-                MinShiftScaler(offset=1e-15, clip=True, copy=True, verbose=self.verbose),
+                MinShiftScaler(offset=1e-8, clip=True, copy=True, verbose=self.verbose),
                 PowerTransformer(method="box-cox", copy=False)
             ),
             'box-cox-1' : make_pipeline(
