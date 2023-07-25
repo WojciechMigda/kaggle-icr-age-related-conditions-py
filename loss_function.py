@@ -6,6 +6,11 @@ import numpy as np
 def balanced_log_loss(*, y_true, y_hat) -> float:
     if y_hat.ndim != 2 or y_hat.shape[1] != 2:
         raise TypeError("y_hat must be a 2d array with two columns for class 0 and 1, respectively.")
+    # https://www.kaggle.com/competitions/icr-identify-age-related-conditions/discussion/422442
+    from sklearn.metrics import log_loss
+    nc = np.bincount(y_true)
+    return log_loss(y_true, y_hat, sample_weight=1 / nc[y_true], eps=1e-15)
+
     # Extracting class labels from y_true
     y_true = y_true.astype(int)
 
