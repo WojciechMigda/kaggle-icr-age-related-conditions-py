@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from sklearn.linear_model import LogisticRegression
+from sklearn.base import RegressorMixin
 
 
-class ProperLogisticRegression(LogisticRegression):
+class ProperLogisticRegression(RegressorMixin, LogisticRegression):
     """ProperLogisticRegression improves over LogisticRegression
     (which is a classifier) to return positive label probability
     as result of predict().
