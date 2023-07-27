@@ -33,6 +33,8 @@ from sklearn.utils.parallel import Parallel, delayed
 from sklearn.utils.validation import _check_sample_weight, check_is_fitted
 from sklearn.linear_model._base import BaseEstimator, LinearClassifierMixin, SparseCoefMixin
 from sklearn.linear_model._linear_loss import LinearModelLoss
+from sklearn.metrics import log_loss
+from scipy.special import expit
 
 _LOGISTIC_SOLVER_CONVERGENCE_MSG = (
     "Please also refer to the documentation for alternative solver options:\n"
@@ -40,6 +42,17 @@ _LOGISTIC_SOLVER_CONVERGENCE_MSG = (
     "#logistic-regression"
 )
 
+#def regularized_balanced_log_loss(coef, X, y, C, class_1_weight):
+def regularized_balanced_log_loss(coef, X, y, C, sample_weight):
+    #nc = np.bincount(y)
+    #nc = np.array([1, 1 / class_1_weight])
+    y_hat = np.matmul(X, coef[:-1]) + coef[-1]
+    expit(y_hat, out=y_hat)
+    #raw_loss = log_loss(y, y_hat, sample_weight=1 / nc[y], eps=1e-15, normalize=True)
+    raw_loss = log_loss(y, y_hat, sample_weight=sample_weight, eps=1e-15, normalize=True)
+    l2_loss = sum(C * np.array(coef)**2) / X.shape[1]
+    #print(f"C={C:.6f} class_1_weight={class_1_weight} raw_loss={raw_loss:.6f} l2_loss={l2_loss:.6f}")
+    return raw_loss + l2_loss
 
 def _logistic_regression_path(
     X,
@@ -48,6 +61,7 @@ def _logistic_regression_path(
     Cs=10,
     fit_intercept=True,
     max_iter=100,
+    max_fun=15000,
     tol=1e-4,
     verbose=0,
     coef=None,
@@ -55,7 +69,6 @@ def _logistic_regression_path(
     random_state=None,
     check_input=True,
     sample_weight=None,
-    n_threads=1,
 ):
     """Compute a Logistic Regression model for a list of regularization
     parameters.
@@ -93,6 +106,11 @@ def _logistic_regression_path(
     max_iter : int, default=100
         Maximum number of iterations for the solver.
 
+    max_fun : int, default=15000
+        Maximum number of L-BFGS-B solver function evaluations. Note that this
+        function may violate the limit because of evaluating gradients by
+        numerical differentiation.
+
     tol : float, default=1e-4
         Stopping criterion. For the newton-cg and lbfgs solvers, the iteration
         will stop when ``max{|g_i | i = 1, ..., n} <= tol``
@@ -127,9 +145,6 @@ def _logistic_regression_path(
     sample_weight : array-like of shape(n_samples,), default=None
         Array of weights that are assigned to individual samples.
         If not provided, then each sample is given unit weight.
-
-    n_threads : int, default=1
-       Number of OpenMP threads to use.
 
     Returns
     -------
@@ -232,14 +247,25 @@ def _logistic_regression_path(
         iprint = [-1, 50, 1, 100, 101][
             np.searchsorted(np.array([0, 1, 2, 3]), verbose)
         ]
+        # scipy 1.11.1 def minimize(fun, x0, args=(), method=None, jac=None, hess=None, hessp=None, bounds=None, constraints=(), tol=None, callback=None, options=None)
+        # scipy 1.10.1 def minimize(fun, x0, args=(), method=None, jac=None, hess=None, hessp=None, bounds=None, constraints=(), tol=None, callback=None, options=None)
+        # def loss_gradient(self, y_true, raw_prediction, sample_weight=None, loss_out=None, gradient_out=None, n_threads=1)
+        # fun(x, *args)
+        # def l2_regularized_loss(coef, X, y, C, class_1_weight):
         opt_res = optimize.minimize(
-            func,
-            w0,
+            #fun=func,
+            fun=regularized_balanced_log_loss,
+            x0=w0,
+            #args=(X, target, sample_weight, l2_reg_strength, n_threads),
+            #args=(X, target.astype(int), l2_reg_strength, 6),
+            args=(X, target.astype(int), l2_reg_strength, sample_weight),
             method="L-BFGS-B",
-            jac=True,
-            args=(X, target, sample_weight, l2_reg_strength, n_threads),
-            options={"iprint": iprint, "gtol": tol, "maxiter": max_iter},
+            #jac=True,
+            jac=None,
+            options={"iprint": iprint, "gtol": tol, "maxiter": max_iter, 'maxfun':max_fun},
+            #options={"iprint": iprint, "gtol": tol, "maxiter": max_iter, 'disp': True},
         )
+        print(max_iter)
         n_iter_i = _check_optimize_result(
             solver,
             opt_res,
@@ -465,6 +491,7 @@ class IcrRegression(LinearClassifierMixin, SparseCoefMixin, BaseEstimator):
         class_weight=None,
         random_state=None,
         max_iter=100,
+        max_fun=15000,
         verbose=0,
         warm_start=False,
         n_jobs=None,
@@ -478,6 +505,7 @@ class IcrRegression(LinearClassifierMixin, SparseCoefMixin, BaseEstimator):
         self.random_state = random_state
         self.solver = "lbfgs"
         self.max_iter = max_iter
+        self.max_fun = max_fun
         self.multi_class = 'ovr'
         self.verbose = verbose
         self.warm_start = warm_start
@@ -520,10 +548,8 @@ class IcrRegression(LinearClassifierMixin, SparseCoefMixin, BaseEstimator):
                 )
                 # Note that check for l1_ratio is done right above
             C_ = np.inf
-            penalty = "l2"
         else:
             C_ = self.C
-            penalty = self.penalty
 
         _dtype = np.float64
 
@@ -580,12 +606,12 @@ class IcrRegression(LinearClassifierMixin, SparseCoefMixin, BaseEstimator):
                 tol=self.tol,
                 verbose=self.verbose,
                 max_iter=self.max_iter,
+                max_fun=self.max_fun,
                 class_weight=self.class_weight,
                 check_input=False,
                 random_state=self.random_state,
                 coef=warm_start_coef_,
                 sample_weight=sample_weight,
-                n_threads=n_threads,
             )
             for class_, warm_start_coef_ in zip(classes_, warm_start_coef)
         )
