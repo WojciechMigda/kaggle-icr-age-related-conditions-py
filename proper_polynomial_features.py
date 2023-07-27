@@ -8,6 +8,10 @@ from sklearn.utils.validation import _check_feature_names_in
 
 
 class ProperPolynomialFeatures(PolynomialFeatures):
+    """Difference wrt. PolynomialFeatures is ability to
+    specify operator string (prod_op) used to concatenate feature
+    names to produce new features.
+    """
     def __init__(self, degree=2, *, interaction_only=False, include_bias=True, order="C", prod_op='×'):
         self.prod_op = prod_op
         super().__init__(degree=degree, interaction_only=interaction_only, include_bias=include_bias, order=order)
