@@ -7,6 +7,7 @@ from .proper_polynomial_features import ProperPolynomialFeatures
 from .min_shift_scaler import MinShiftScaler
 from .identity_transformer import IdentityTransformer
 from .monitoring_transformer import MonitoringTransformer
+from .calibrated_regressor_cv import CalibratedRegressorCV
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
