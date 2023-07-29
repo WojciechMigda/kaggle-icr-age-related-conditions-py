@@ -9,6 +9,7 @@ from .identity_transformer import IdentityTransformer
 from .monitoring_transformer import MonitoringTransformer
 from .calibrated_regressor_cv import CalibratedRegressorCV
 from .ordinal_binarizer import OrdinalBinarizer
+from .weighted_kernel_ridge import WeightedKernelRidge
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
