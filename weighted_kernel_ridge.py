@@ -32,6 +32,11 @@ class WeightedKernelRidge(KernelRidge):
 
     @_fit_context(prefer_skip_nested_validation=True)
     def fit(self, X, y, sample_weight=None):
+        # Convert data
+        X, y = self._validate_data(
+            X, y, accept_sparse=("csr", "csc"), multi_output=True, y_numeric=True
+        )
+
         # If sample weights exist, convert them to array (support for lists)
         # and check length
         # Otherwise set them to 1 for all examples
