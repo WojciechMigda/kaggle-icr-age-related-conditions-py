@@ -8,7 +8,7 @@ os.environ['PYTHONWARNINGS']=",".join([
     'ignore:Persisting input arguments took:UserWarning',
     'ignore:Setting the eps parameter is deprecated and will be removed in 1.5. Instead eps will always havea default value of:FutureWarning',
     'ignore:suggest_loguniform has been deprecated in:FutureWarning',
-    'ignore:X has feature names, but :UserWarning'
+    'ignore:X has feature names:UserWarning'
 ])
 
 import warnings
