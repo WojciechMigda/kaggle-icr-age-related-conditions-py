@@ -1,3 +1,8 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+# https://alexmiller.phd/posts/linear-model-custom-loss-function-regularization-python/
+
 """
 Logistic Regression
 """
