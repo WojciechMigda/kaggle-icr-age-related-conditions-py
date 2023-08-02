@@ -20,3 +20,6 @@ from .cached_estimator import make_cached_estimator
 from .dataset_columns import COL_X_NUM, COL_X_CAT
 
 from .pickleable_bits import ohe_feature_name_combiner
+
+from .preprocessing import make_lm_preprocessor
+from .util import split_gen
