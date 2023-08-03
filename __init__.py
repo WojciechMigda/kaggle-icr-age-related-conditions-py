@@ -21,5 +21,6 @@ from .dataset_columns import COL_X_NUM, COL_X_CAT
 
 from .pickleable_bits import ohe_feature_name_combiner
 
-from .preprocessing import make_lm_preprocessor
+from .preprocessing import make_lm_preprocessor, make_xgbr_preprocessor
 from .util import split_gen
+from .estimators import make_xgbr_model, make_xgbr_single_estimator

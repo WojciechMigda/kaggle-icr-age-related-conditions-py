@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 def make_lm_preprocessor(
     *,
     random_state=None,
@@ -10,21 +12,21 @@ def make_lm_preprocessor(
     rfe__n_features_to_select=57, rfe__step=0.03, rfe__verbose=False, rfe__estimator=None,
 ):
     from sklearn.pipeline import Pipeline
-    from pyicr import OutlierEncoder
+    from .outlier_encoder import OutlierEncoder
     from sklearn.compose import ColumnTransformer, make_column_selector
-    from pyicr import DistributionTransformer
+    from .distribution_transformer import DistributionTransformer
     from sklearn.preprocessing import OneHotEncoder
-    from pyicr import ohe_feature_name_combiner
+    from .pickleable_bits import ohe_feature_name_combiner
     from sklearn.preprocessing import StandardScaler
     from sklearn.experimental import enable_iterative_imputer
     from sklearn.impute import IterativeImputer
-    from pyicr import ProperPolynomialFeatures
+    from .proper_polynomial_features import ProperPolynomialFeatures
     from sklearn.pipeline import FeatureUnion
-    from pyicr import IdentityTransformer
+    from .identity_transformer import IdentityTransformer
     from sklearn.decomposition import PCA
     from sklearn.feature_selection import RFE
     from sklearn import base
-    from pyicr import COL_X_CAT, COL_X_NUM
+    from .dataset_columns import COL_X_CAT, COL_X_NUM
 
     preprocessor = Pipeline(
         [
@@ -72,6 +74,48 @@ def make_lm_preprocessor(
             #('PCA', PCA(whiten=False, random_state=random_state)), # 42(+) 0.357410 43(+) 0.331301 44(+) 0.409705
             
             ('X feat selection', RFE(estimator=base.clone(rfe__estimator), n_features_to_select=rfe__n_features_to_select, step=rfe__step, verbose=rfe__verbose).set_output(transform='pandas')),
+        ],
+        verbose=pre__verbose,
+    )
+
+    return preprocessor
+
+def make_xgbr_preprocessor(
+    *,
+    pre__verbose=False,
+    bs__drop_source=False,
+    mms__max=1,
+):
+    from sklearn.pipeline import Pipeline
+    from .bin_splitter import BinSplitter
+    from sklearn.compose import ColumnTransformer, make_column_selector
+    from sklearn.preprocessing import OneHotEncoder
+    from .pickleable_bits import ohe_feature_name_combiner
+    from sklearn.preprocessing import MinMaxScaler
+    #from sklearn.pipeline import FeatureUnion
+    #from .identity_transformer import IdentityTransformer
+    #from sklearn.decomposition import PCA
+    #from sklearn.feature_selection import RFE
+    #from sklearn import base
+    from .dataset_columns import COL_X_CAT
+
+
+    mms__max = np.clip(mms__max, 1, 10)
+    
+    preprocessor = Pipeline(
+        [
+            ('X split', BinSplitter(drop_source=bs__drop_source)),
+
+            ('CAT one-hot', ColumnTransformer(transformers=[
+                ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
+                ("CAT drop", "drop", COL_X_CAT),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('X 0-n scale', ColumnTransformer(transformers=[
+                ("NUM MinMaxScaler", MinMaxScaler(feature_range=(0, mms__max)), make_column_selector(pattern="(?!Class)")),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            #('X feat selection', RFE(estimator=base.clone(rfe__estimator), n_features_to_select=rfe__n_features_to_select, step=rfe__step, verbose=rfe__verbose).set_output(transform='pandas')),
         ],
         verbose=pre__verbose,
     )
