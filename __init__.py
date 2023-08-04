@@ -23,4 +23,9 @@ from .pickleable_bits import ohe_feature_name_combiner
 
 from .preprocessing import make_lm_preprocessor, make_xgbr_preprocessor
 from .util import split_gen
-from .estimators import make_xgbr_model, make_xgbr_single_estimator
+from .estimators import (
+    make_xgbr_model,
+    make_xgbr_single_estimator,
+    make_lr_model,
+    make_lr_single_estimator,
+)

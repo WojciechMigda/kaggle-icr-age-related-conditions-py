@@ -4,6 +4,7 @@
 from sklearn import base
 
 from .proper_xgboost import ProperXGBRegressor
+from .proper_logistic_regression import ProperLogisticRegression
 
 
 def make_xgbr_single_regressor(
@@ -91,3 +92,93 @@ def make_xgbr_model(
         ],
         verbose=vr__verbose,
     )
+
+###############################################################################
+
+def make_lr_single_regressor(
+    *,
+    lr__class_weight,
+    lr__max_iter,
+    lr__C,
+):
+    regressor = ProperLogisticRegression(class_weight={0: 1, 1: lr__class_weight}, max_iter=lr__max_iter, C=lr__C)
+    return regressor
+
+
+def make_lr_single_estimator(
+    regressor,
+    *,
+    random_state=None,
+    est__verbose=False,
+    pre__verbose=False,
+    oe__fill_na=None,
+    ii__max_iter=50,
+    ii__verbose=0,
+    rfe__n_features_to_select=57,
+    rfe__step=0.03,
+    rfe__verbose=False,
+    rfe__estimator=None,
+):
+    from sklearn.pipeline import Pipeline
+    from sklearn import base
+    from .preprocessing import make_lm_preprocessor
+
+    estimator = Pipeline(
+        [
+            ('Preprocess', make_lm_preprocessor(
+                random_state=random_state,
+                pre__verbose=pre__verbose,
+                oe__fill_na=oe__fill_na,
+                ii__max_iter=ii__max_iter,
+                ii__verbose=ii__verbose,
+                rfe__n_features_to_select=rfe__n_features_to_select,
+                rfe__step=rfe__step,
+                rfe__verbose=rfe__verbose,
+                rfe__estimator=rfe__estimator,
+            )),
+            ('LR', base.clone(regressor)),
+        ],
+        verbose=est__verbose,
+    )
+
+    return estimator
+
+
+def make_lr_model(
+    *,
+    est__verbose=False,
+    pre__verbose=False,
+    vr__verbose=False,
+    lr__params_list=[{}]
+):
+    from sklearn.ensemble import VotingRegressor
+
+    return VotingRegressor(
+        [
+            (f"LR_{i + 1}",
+            make_lr_single_estimator(
+                make_lr_single_regressor(
+                    lr__class_weight=params["lr__class_weight"],
+                    lr__max_iter=params["lr__max_iter"],
+                    lr__C=params["lr__C"],
+                ),
+                random_state=params["random_state"],
+                est__verbose=est__verbose,
+                pre__verbose=pre__verbose,
+                oe__fill_na=params["oe__fill_na"],
+                ii__max_iter=params["ii__max_iter"],
+                ii__verbose=params["ii__verbose"],
+                rfe__n_features_to_select=params["rfe__n_features_to_select"],
+                rfe__verbose=params["rfe__verbose"],
+                rfe__estimator=make_lr_single_regressor(
+                    lr__class_weight=params["lr__class_weight"],
+                    lr__max_iter=params["lr__max_iter"],
+                    lr__C=params["lr__C"],
+                ),
+            ))
+            for i, params in enumerate(lr__params_list)
+        ],
+        verbose=vr__verbose,
+    )
+
+###############################################################################
