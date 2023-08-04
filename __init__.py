@@ -28,4 +28,6 @@ from .estimators import (
     make_xgbr_single_estimator,
     make_lr_model,
     make_lr_single_estimator,
+    make_krr_model,
+    make_krr_single_estimator,
 )

@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from multiprocessing.sharedctypes import Value
 from sklearn import base
 
 from .proper_xgboost import ProperXGBRegressor
 from .proper_logistic_regression import ProperLogisticRegression
+from .weighted_kernel_ridge import WeightedKernelRidge
 
 
 def make_xgbr_single_regressor(
@@ -157,7 +159,7 @@ def make_lr_model(
         [
             (f"LR_{i + 1}",
             make_lr_single_estimator(
-                make_lr_single_regressor(
+                regressor=make_lr_single_regressor(
                     lr__class_weight=params["lr__class_weight"],
                     lr__max_iter=params["lr__max_iter"],
                     lr__C=params["lr__C"],
@@ -182,3 +184,106 @@ def make_lr_model(
     )
 
 ###############################################################################
+
+def make_krr_single_regressor(
+    *,
+    krr__params,
+):
+    kernel = krr__params['kernel']
+
+    if kernel == 'poly':
+        regressor = WeightedKernelRidge(
+            kernel=kernel,
+            alpha=krr__params['poly:alpha'],
+            degree=krr__params['poly:degree'],
+            kernel_params={
+                'gamma': krr__params['poly:gamma'],
+                'coef0': krr__params['poly:coef0']
+            },
+            class_weight={0: 1, 1: krr__params['poly:class_weight']}
+        )
+    elif kernel == 'laplacian':
+        regressor = WeightedKernelRidge(
+            kernel=kernel,
+            alpha=krr__params['laplacian:alpha'],
+            kernel_params={
+                'gamma': krr__params['laplacian:gamma']
+            },
+            class_weight={0: 1, 1: krr__params['laplacian:class_weight']}
+        )
+    else:
+        raise ValueError(f'Unknown KRR kernel: {kernel}')
+    return regressor
+
+
+def make_krr_single_estimator(
+    regressor,
+    *,
+    random_state=None,
+    est__verbose=False,
+    pre__verbose=False,
+    oe__fill_na=None,
+    ii__max_iter=50,
+    ii__verbose=0,
+    rfe__n_features_to_select=57,
+    rfe__step=0.03,
+    rfe__verbose=False,
+    rfe__estimator=None,
+):
+    from sklearn.pipeline import Pipeline
+    from sklearn import base
+    from .preprocessing import make_lm_preprocessor
+
+    estimator = Pipeline(
+        [
+            ('Preprocess', make_lm_preprocessor(
+                random_state=random_state,
+                pre__verbose=pre__verbose,
+                oe__fill_na=oe__fill_na,
+                ii__max_iter=ii__max_iter,
+                ii__verbose=ii__verbose,
+                rfe__n_features_to_select=rfe__n_features_to_select,
+                rfe__step=rfe__step,
+                rfe__verbose=rfe__verbose,
+                rfe__estimator=rfe__estimator,
+            )),
+            ('KRR', base.clone(regressor)),
+        ],
+        verbose=est__verbose,
+    )
+
+    return estimator
+
+
+def make_krr_model(
+    *,
+    est__verbose=False,
+    pre__verbose=False,
+    vr__verbose=False,
+    krr__params_list=[{}]
+):
+    from sklearn.ensemble import VotingRegressor
+
+    return VotingRegressor(
+        [
+            (f"KRR_{i + 1}",
+            make_krr_single_estimator(
+                regressor=make_krr_single_regressor(krr__params=params),
+                random_state=params["random_state"],
+                est__verbose=est__verbose,
+                pre__verbose=pre__verbose,
+                oe__fill_na=params["oe__fill_na"],
+                ii__max_iter=params["ii__max_iter"],
+                ii__verbose=params["ii__verbose"],
+                rfe__n_features_to_select=params["rfe__n_features_to_select"],
+                rfe__verbose=params["rfe__verbose"],
+                rfe__estimator=make_lr_single_regressor(
+                    lr__class_weight=params["lr__class_weight"],
+                    lr__max_iter=params["lr__max_iter"],
+                    lr__C=params["lr__C"],
+                ),
+            ))
+            for i, params in enumerate(krr__params_list)
+        ],
+        verbose=vr__verbose,
+    )
