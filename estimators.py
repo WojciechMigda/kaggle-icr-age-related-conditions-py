@@ -7,6 +7,7 @@ from sklearn import base
 from .proper_xgboost import ProperXGBRegressor
 from .proper_logistic_regression import ProperLogisticRegression
 from .weighted_kernel_ridge import WeightedKernelRidge
+from .tsetlin_regressor import TsetliniRegressor
 
 
 def make_xgbr_single_regressor(
@@ -19,9 +20,9 @@ def make_xgbr_single_regressor(
         validate_parameters=False,
         seed=random_state,
         decimals=xgb__decimals,
-        
+
         objective="reg:logistic",
-        
+
         booster=xgb__params['booster'],
         n_estimators=xgb__params['n_estimators'],
         max_depth=xgb__params['max_depth'],
@@ -284,6 +285,117 @@ def make_krr_model(
                 ),
             ))
             for i, params in enumerate(krr__params_list)
+        ],
+        verbose=vr__verbose,
+    )
+
+###############################################################################
+
+def make_tsr_single_regressor(
+    *,
+    random_state,
+    tsr__app_path,
+    tsr__C,
+    tsr__T,
+    tsr__s,
+    tsr__epochs,
+    tsr__C1,
+    tsr__C2,
+    tsr__n_jobs,
+    tsr__tile_size=64,
+    tsr__boost_tpf=False,
+    tsr__verbose=False
+):
+    regressor = TsetliniRegressor(
+        random_state=random_state,
+        app_path=tsr__app_path,
+        C=tsr__C,
+        T=tsr__T,
+        s=tsr__s,
+        epochs=tsr__epochs,
+        C1=tsr__C1,
+        C2=tsr__C2,
+        n_jobs=tsr__n_jobs,
+        tile_size=tsr__tile_size,
+        verbose=tsr__verbose,
+        boost_tpf=tsr__boost_tpf,
+    )
+    return regressor
+
+def make_tsr_single_estimator(
+    regressor,
+    *,
+    random_state=None,
+    est__verbose=False,
+    pre__verbose=False,
+    kbd__n_bins=20,
+    ii__max_iter=50,
+    ii__verbose=False,
+):
+    from sklearn.pipeline import Pipeline
+    from sklearn import base
+    from .preprocessing import make_tsr_preprocessor
+
+    estimator = Pipeline(
+        [
+            ('Preprocess', make_tsr_preprocessor(
+                random_state=random_state,
+                pre__verbose=pre__verbose,
+                kbd__n_bins=kbd__n_bins,
+                ii__max_iter=ii__max_iter,
+                ii__verbose=ii__verbose,
+            )),
+            ('TSR', base.clone(regressor)),
+        ],
+        verbose=est__verbose,
+    )
+
+    return estimator
+
+def make_tsr_model(
+    *,
+    est__verbose=False,
+    pre__verbose=False,
+    vr__verbose=False,
+    ii__verbose=False,
+    tsr__app_path='/kaggle/working/app-build/app/main',
+    tsr__boost_tpf=False,
+    tsr__n_jobs=2,
+    tsr__tile_size=64,
+    tsr__verbose=False,
+    tsr__params_list=[{}]
+):
+    from sklearn.ensemble import VotingRegressor
+
+    return VotingRegressor(
+        [
+            (
+                f"TSR_{i + 1}",
+                make_tsr_single_estimator(
+                    regressor=make_tsr_single_regressor(
+                        random_state=params['random_state'],
+                        tsr__app_path=tsr__app_path,
+                        tsr__C=params['C'],
+                        tsr__T=params['T'],
+                        tsr__s=params['s'],
+                        tsr__epochs=params['epochs'],
+                        tsr__C1=params['C1'],
+                        tsr__C2=params['C1'] / params['C2 factor'],
+                        tsr__n_jobs=tsr__n_jobs,
+                        tsr__tile_size=tsr__tile_size,
+                        tsr__boost_tpf=tsr__boost_tpf,
+                        tsr__verbose=tsr__verbose,
+                    ),
+                    random_state=params["random_state"],
+                    est__verbose=est__verbose,
+                    pre__verbose=pre__verbose,
+                    kbd__n_bins=params['kbd__n_bins'],
+
+                    ii__max_iter=params["ii__max_iter"],
+                    ii__verbose=ii__verbose,
+                ),
+            )
+            for i, params in enumerate(tsr__params_list)
         ],
         verbose=vr__verbose,
     )

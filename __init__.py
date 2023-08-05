@@ -12,6 +12,7 @@ from .ordinal_binarizer import OrdinalBinarizer
 from .weighted_kernel_ridge import WeightedKernelRidge
 from .bin_splitter import BinSplitter
 from .proper_xgboost import ProperXGBRegressor, ProperXGBClassifier
+from .tsetlin_regressor import TsetliniRegressor
 
 from .loss_function import balanced_log_loss
 from .tsne_plot import tsne_plot
@@ -21,7 +22,7 @@ from .dataset_columns import COL_X_NUM, COL_X_CAT
 
 from .pickleable_bits import ohe_feature_name_combiner
 
-from .preprocessing import make_lm_preprocessor, make_xgbr_preprocessor
+from .preprocessing import make_lm_preprocessor, make_xgbr_preprocessor, make_tsr_preprocessor
 from .util import split_gen
 from .estimators import (
     make_xgbr_model,
@@ -30,4 +31,6 @@ from .estimators import (
     make_lr_single_estimator,
     make_krr_model,
     make_krr_single_estimator,
+    make_tsr_model,
+    make_tsr_single_estimator,
 )

@@ -160,7 +160,8 @@ def make_tsr_preprocessor(
     random_state=None,
     pre__verbose=False,
     kbd__n_bins=20,
-    ii__max_iter=50, ii__verbose=0,
+    ii__max_iter=50,
+    ii__verbose=False,
 ):
     from sklearn.pipeline import Pipeline
     from sklearn.compose import ColumnTransformer, make_column_selector
