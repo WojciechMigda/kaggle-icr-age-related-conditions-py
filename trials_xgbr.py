@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+### storage_name, study_name = "sqlite:///ICR-XGB-basic.db", "ICR-XGBRegressor-set3"
 xgbr_trial_2220 = {
     # cv=10 0.2014799056868859
     "booster": "gbtree",
@@ -107,6 +108,7 @@ xgbr_trial_2428 = {
     'random_state': 42,
 }
 
+### storage_name, study_name = "sqlite:///ICR-XGB-basic.db", "ICR-XGBRegressor-set2"
 xgbr_trial_1823 = {
     # cv=4 0.225613163069299
     # cv=8 0.22496474405100472
@@ -221,4 +223,111 @@ xgbr_trial_1686 = {
     'mms__max': 1.0061,
     'xgb__decimals': 4,
     'random_state': 42,
+}
+
+### storage_name, study_name = "sqlite:///ICR-XGB-basic.db", "ICR-XGBRegressor-set4-cv48"
+xgbr_trial_3541 = {
+    # cv=[4,8] 0.21502458616491563
+    "booster": "gbtree",
+    "alpha": 2.6952000000000003,
+    "bs__drop_source": 0,
+    "colsample_bylevel": 0.9809862690855041,
+    "colsample_bynode": 0.5138763462103039,
+    "colsample_bytree": 0.7393694812915812,
+    "gamma": 0.0018984264331079034,
+    "lambda": 2.3959,
+    "learning_rate": 0.007941698122245445,
+    "max_delta_step": 12.405330021271292,
+    "max_depth": 3,
+    "min_child_weight": 6,
+    "mms__max": 1.4134,
+    "n_estimators": 2190,
+    "scale_pos_weight": 84,
+    "subsample": 0.9260109167928318,
+    "xgb__decimals": 5,
+    "random_state": 42,
+}
+xgbr_trial_3523 = {
+    # cv=[4,8] 0.2150941061585824
+    "booster": "gbtree",
+    "alpha": 2.4857,
+    "bs__drop_source": 0,
+    "colsample_bylevel": 0.9699656920460411,
+    "colsample_bynode": 0.5047090680098032,
+    "colsample_bytree": 0.7094774565461806,
+    "gamma": 0.002874953574261176,
+    "lambda": 1.7137,
+    "learning_rate": 0.008551818439482575,
+    "max_delta_step": 12.96019543023382,
+    "max_depth": 4,
+    "min_child_weight": 6,
+    "mms__max": 1.5511,
+    "n_estimators": 2220,
+    "scale_pos_weight": 83,
+    "subsample": 0.9254231917953232,
+    "xgb__decimals": 5,
+    "random_state": 42,
+}
+xgbr_trial_3932 = {
+    # cv=[4,8] 0.2153589730157036
+    "booster": "gbtree",
+    "alpha": 2.8334,
+    "bs__drop_source": 0,
+    "colsample_bylevel": 0.9810233787995121,
+    "colsample_bynode": 0.49771380633439344,
+    "colsample_bytree": 0.839080270913315,
+    "gamma": 2.7469649018640233e-05,
+    "lambda": 5.2033000000000005,
+    "learning_rate": 0.010875440430973436,
+    "max_delta_step": 14.279468482093224,
+    "max_depth": 3,
+    "min_child_weight": 8,
+    "mms__max": 1.4263,
+    "n_estimators": 2190,
+    "scale_pos_weight": 96,
+    "subsample": 0.9598758379880662,
+    "xgb__decimals": 5,
+    "random_state": 42,
+}
+xgbr_trial_3501 = {
+    # cv=[4,8] 0.21605008536055673
+    "booster": "gbtree",
+    "alpha": 1.48,
+    "bs__drop_source": 0,
+    "colsample_bylevel": 0.9398145789042852,
+    "colsample_bynode": 0.5715196575476389,
+    "colsample_bytree": 0.7256831838909905,
+    "gamma": 0.0017591213205824933,
+    "lambda": 4.4975000000000005,
+    "learning_rate": 0.009956098865775666,
+    "max_delta_step": 13.464852478989766,
+    "max_depth": 3,
+    "min_child_weight": 7,
+    "mms__max": 1.6768,
+    "n_estimators": 2060,
+    "scale_pos_weight": 90,
+    "subsample": 0.9389603991473482,
+    "xgb__decimals": 5,
+    "random_state": 42,
+}
+xgbr_trial_3400 = {
+    # cv=[4,8] 0.21609209316878789
+    "booster": "gbtree",
+    "alpha": 0.22590000000000002,
+    "bs__drop_source": 0,
+    "colsample_bylevel": 0.9218410793957509,
+    "colsample_bynode": 0.8259657134689834,
+    "colsample_bytree": 0.9735409945302527,
+    "gamma": 0.0002982126006252791,
+    "lambda": 6.7026,
+    "learning_rate": 0.01118990353267502,
+    "max_delta_step": 23.61018209022417,
+    "max_depth": 3,
+    "min_child_weight": 6,
+    "mms__max": 4.406700000000001,
+    "n_estimators": 1660,
+    "scale_pos_weight": 88,
+    "subsample": 0.9964644674952218,
+    "xgb__decimals": 5,
+    "random_state": 42,
 }
