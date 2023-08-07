@@ -26,6 +26,8 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         random_state: int,
         n_jobs: int,
         verbose: bool,
+        subprocess__shell: bool,
+        subprocess__check_call: bool,
     ):
         self.C = C
         self.T = T
@@ -39,6 +41,8 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         self.n_jobs = n_jobs
         self.app_path = app_path
         self.verbose = verbose
+        self.subprocess__shell = subprocess__shell
+        self.subprocess__check_call = subprocess__check_call
 
     def __del__(self):
         if hasattr(self, '_tmp_path'):
@@ -102,7 +106,17 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         train_args.extend(['-d', self._train_Xy_csv])
         train_args.extend(['-o', self._model_json])
 
-        subprocess.run([self.app_path] + train_args, capture_output=self.verbose, check=True)
+        if self.subprocess__check_call:
+            from tempfile import NamedTemporaryFile
+            with NamedTemporaryFile() as f:
+                subprocess.check_call([self.app_path] + train_args, stdout=f, stderr=subprocess.STDOUT)
+                if self.verbose:
+                    f.seek(0)
+                    print(f.read())
+        elif self.subprocess__shell:
+            subprocess.run(' '.join([self.app_path] + train_args), capture_output=self.verbose, check=True, shell=True)
+        else:
+            subprocess.run([self.app_path] + train_args, capture_output=self.verbose, check=True, shell=False)
         return self
 
     def predict(self, X):
@@ -120,6 +134,16 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         infer_args.extend(['-m', self._model_json])
         infer_args.extend(['-o', self._infer_y_csv])
 
-        subprocess.run([self.app_path] + infer_args, capture_output=self.verbose, check=True)
+        if self.subprocess__check_call:
+            from tempfile import NamedTemporaryFile
+            with NamedTemporaryFile() as f:
+                subprocess.check_call([self.app_path] + infer_args, stdout=f, stderr=subprocess.STDOUT)
+                if self.verbose:
+                    f.seek(0)
+                    print(f.read())
+        elif self.subprocess__shell:
+            subprocess.run(' '.join([self.app_path] + infer_args), capture_output=self.verbose, check=True, shell=True)
+        else:
+            subprocess.run([self.app_path] + infer_args, capture_output=self.verbose, check=True, shell=False)
 
         return pd.read_csv(self._infer_y_csv, index_col="Id").class_1.values

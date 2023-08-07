@@ -294,6 +294,8 @@ def make_krr_model(
 def make_tsr_single_regressor(
     *,
     random_state,
+    subprocess__shell,
+    subprocess__check_call,
     tsr__app_path,
     tsr__C,
     tsr__T,
@@ -319,6 +321,8 @@ def make_tsr_single_regressor(
         tile_size=tsr__tile_size,
         verbose=tsr__verbose,
         boost_tpf=tsr__boost_tpf,
+        subprocess__shell=subprocess__shell,
+        subprocess__check_call=subprocess__check_call,
     )
     return regressor
 
@@ -359,6 +363,8 @@ def make_tsr_model(
     vr__verbose=False,
     ii__verbose=False,
     kbd__n_bins=20,
+    subprocess__shell=False,
+    subprocess__check_call=False,
     tsr__app_path='/kaggle/working/app-build/app/main',
     tsr__boost_tpf=False,
     tsr__n_jobs=2,
@@ -375,6 +381,8 @@ def make_tsr_model(
                 make_tsr_single_estimator(
                     regressor=make_tsr_single_regressor(
                         random_state=params['random_state'],
+                        subprocess__shell=subprocess__shell,
+                        subprocess__check_call=subprocess__check_call,
                         tsr__app_path=tsr__app_path,
                         tsr__C=params['C'],
                         tsr__T=params['T'],
