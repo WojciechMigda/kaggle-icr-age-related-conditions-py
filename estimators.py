@@ -358,6 +358,7 @@ def make_tsr_model(
     pre__verbose=False,
     vr__verbose=False,
     ii__verbose=False,
+    kbd__n_bins=20,
     tsr__app_path='/kaggle/working/app-build/app/main',
     tsr__boost_tpf=False,
     tsr__n_jobs=2,
@@ -389,7 +390,7 @@ def make_tsr_model(
                     random_state=params["random_state"],
                     est__verbose=est__verbose,
                     pre__verbose=pre__verbose,
-                    kbd__n_bins=params['kbd__n_bins'],
+                    kbd__n_bins=kbd__n_bins,
 
                     ii__max_iter=params["ii__max_iter"],
                     ii__verbose=ii__verbose,

@@ -77,11 +77,12 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         if not isinstance(X, pd.DataFrame):
             raise ValueError(f'{self.__class__.__name__} requires pandas DataFrame as X input')
         if not isinstance(y, pd.DataFrame):
-            raise ValueError(f'{self.__class__.__name__} requires pandas DataFrame as y input')
+            #raise ValueError(f'{self.__class__.__name__} requires pandas DataFrame as y input')
+            y = pd.DataFrame(y, columns=['Class']).set_index(X.index)
         tmp_path = tempfile.mkdtemp(self.__class__.__name__)
         self._tmp_path = tmp_path
 
-        pd.concat([X, y], axis=1).to_csv(self._train_Xy_csv)
+        pd.concat([X, y], axis=1).astype(int).to_csv(self._train_Xy_csv)
 
         app_args_train = [
             'train',
@@ -108,7 +109,7 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
         if not hasattr(self, '_tmp_path'):
             raise RuntimeError(f'predict() called before fit()')
 
-        X.to_csv(self._infer_X_csv)
+        X.astype(int).to_csv(self._infer_X_csv)
 
         app_args_infer = [
             'infer',
@@ -121,4 +122,4 @@ class TsetliniRegressor(RegressorMixin, BaseEstimator):
 
         subprocess.run([self.app_path] + infer_args, capture_output=self.verbose, check=True)
 
-        return pd.read_csv(self._infer_y_csv, index_col="Id")
+        return pd.read_csv(self._infer_y_csv, index_col="Id").class_1.values

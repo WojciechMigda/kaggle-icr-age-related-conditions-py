@@ -174,13 +174,22 @@ def make_tsr_preprocessor(
     from .ordinal_binarizer import OrdinalBinarizer
     from sklearn import base
     from .dataset_columns import COL_X_CAT, COL_X_NUM
+    from sklearn.pipeline import FeatureUnion
+    from .identity_transformer import IdentityTransformer
 
     preprocessor = Pipeline(
         [
-            ('CAT one-hot', ColumnTransformer(transformers=[
-                ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
-                ("CAT drop", "drop", COL_X_CAT),
-            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+            #('CAT one-hot 1', ColumnTransformer(transformers=[
+            #    ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
+            #    #("CAT drop", "drop", COL_X_CAT),
+            #], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('CAT one-hot 1', FeatureUnion([
+                ('ALL pass', IdentityTransformer()),
+                ('CAT one hot w/ drop', ColumnTransformer(transformers=[
+                    ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
+                        ], remainder='drop', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas'))
+            ]).set_output(transform='pandas')),
 
             ('NUM std scale', ColumnTransformer(transformers=[
                 ("NUM StandardScaler", StandardScaler(), COL_X_NUM),
@@ -195,9 +204,70 @@ def make_tsr_preprocessor(
             #    ('X KBinsDiscretizer', KBinsDiscretizer(n_bins=kbd__n_kbins, encode='ordinal', strategy='quantile'), COL_X_NUM),
             #], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
 
+            # drop scaled dummies used for imputing
+            ('DUMMY drop', ColumnTransformer(transformers=[
+                ('DUMMY drop', 'drop', make_column_selector(pattern="dummy .*"))
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+            
+            # re-create unscales dummies
+            ('CAT one-hot 2', ColumnTransformer(transformers=[
+                ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
+                ("CAT drop", "drop", COL_X_CAT),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
             ('X binarize', ColumnTransformer(transformers=[
                 ('X BinarizingTransformer', BinarizingTransformer(kbd__n_bins=kbd__n_bins, kbd__encode='ordinal', kbd__strategy='quantile'), COL_X_NUM),
             ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+        ],
+        verbose=pre__verbose,
+    )
+
+    return preprocessor
+
+
+def make_tsr_legacy_preprocessor(
+    *,
+    random_state=None,
+    pre__verbose=False,
+    kbd__n_bins=20,
+    ii__max_iter=50,
+    ii__verbose=False,
+):
+    from sklearn.pipeline import Pipeline
+    from sklearn.compose import ColumnTransformer, make_column_selector
+    from sklearn.preprocessing import OneHotEncoder
+    from .pickleable_bits import ohe_feature_name_combiner
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.experimental import enable_iterative_imputer
+    from sklearn.impute import IterativeImputer
+    from sklearn.preprocessing import KBinsDiscretizer
+    from sklearn.preprocessing import FunctionTransformer
+    from .ordinal_binarizer import OrdinalBinarizer
+    from sklearn import base
+    from .dataset_columns import COL_X_CAT, COL_X_NUM
+    from sklearn.pipeline import FeatureUnion
+    from .identity_transformer import IdentityTransformer
+
+    preprocessor = Pipeline(
+        [
+            ('CAT one-hot 1', ColumnTransformer(transformers=[
+                ("CAT OneHotEncoder", OneHotEncoder(drop=None, sparse_output=False, handle_unknown='ignore', feature_name_combiner=ohe_feature_name_combiner, dtype=int), COL_X_CAT),
+                #("CAT drop", "drop", COL_X_CAT),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('NUM std scale', ColumnTransformer(transformers=[
+                ("NUM StandardScaler", StandardScaler(), COL_X_NUM),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('X impute', ColumnTransformer(transformers=[
+                ('X IterativeImputer', IterativeImputer(verbose=ii__verbose, sample_posterior=True, max_iter=ii__max_iter, random_state=random_state), COL_X_NUM + ['dummy EJ_A', 'dummy EJ_B']),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('X binarize', ColumnTransformer(transformers=[
+                ('X BinarizingTransformer', BinarizingTransformer(kbd__n_bins=kbd__n_bins, kbd__encode='ordinal', kbd__strategy='quantile'), COL_X_NUM),
+            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+
+            ('ALL int', FunctionTransformer(lambda a: a.astype(int)).set_output(transform='pandas')),
         ],
         verbose=pre__verbose,
     )
