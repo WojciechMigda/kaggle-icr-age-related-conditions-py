@@ -8,8 +8,13 @@ def make_lm_preprocessor(
     random_state=None,
     pre__verbose=False,
     oe__fill_na=None,
-    ii__max_iter=50, ii__verbose=0,
-    rfe__n_features_to_select=57, rfe__step=0.03, rfe__verbose=False, rfe__estimator=None,
+    ii__max_iter=50,
+    ii__make_cached=True,
+    ii__verbose=0,
+    rfe__n_features_to_select=57,
+    rfe__step=0.03,
+    rfe__verbose=False,
+    rfe__estimator=None,
 ):
     from sklearn.pipeline import Pipeline
     from .outlier_encoder import OutlierEncoder
@@ -27,6 +32,7 @@ def make_lm_preprocessor(
     from sklearn.feature_selection import RFE
     from sklearn import base
     from .dataset_columns import COL_X_CAT, COL_X_NUM
+    from .cached_estimator import make_cached_estimator
 
     preprocessor = Pipeline(
         [
@@ -46,9 +52,16 @@ def make_lm_preprocessor(
                 ("DUMMY StandardScaler", StandardScaler(with_std=False), make_column_selector(pattern="dummy .*")),
             ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
 
-            ('X impute', ColumnTransformer(transformers=[
-                ('X IterativeImputer', IterativeImputer(verbose=ii__verbose, sample_posterior=True, max_iter=ii__max_iter, random_state=random_state), COL_X_NUM + ['dummy EJ_A', 'dummy EJ_B']),
-            ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')),
+            ('X impute',
+                make_cached_estimator(ColumnTransformer(transformers=[
+                    ('X IterativeImputer', IterativeImputer(verbose=ii__verbose, sample_posterior=True, max_iter=ii__max_iter, random_state=random_state), COL_X_NUM + ['dummy EJ_A', 'dummy EJ_B']),
+                    ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas'),
+                step_name='X cached impute', memory='/kaggle/working/pipeline_cache')
+                if ii__make_cached else
+                ColumnTransformer(transformers=[
+                    ('X IterativeImputer', IterativeImputer(verbose=ii__verbose, sample_posterior=True, max_iter=ii__max_iter, random_state=random_state), COL_X_NUM + ['dummy EJ_A', 'dummy EJ_B']),
+                    ], remainder='passthrough', verbose_feature_names_out=False, n_jobs=1).set_output(transform='pandas')
+            ),
 
             ('NUM re-distribute (2)', ColumnTransformer(transformers=[
                 ("NUM DistributionTransformer", DistributionTransformer(transforms=['original', 'yeo-johnson', 'quantile'], random_state=random_state, verbose=False), COL_X_NUM),

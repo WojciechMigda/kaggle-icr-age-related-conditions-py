@@ -116,6 +116,7 @@ def make_lr_single_estimator(
     pre__verbose=False,
     oe__fill_na=None,
     ii__max_iter=50,
+    ii__make_cached=True,
     ii__verbose=0,
     rfe__n_features_to_select=57,
     rfe__step=0.03,
@@ -133,6 +134,7 @@ def make_lr_single_estimator(
                 pre__verbose=pre__verbose,
                 oe__fill_na=oe__fill_na,
                 ii__max_iter=ii__max_iter,
+                ii__make_cached=ii__make_cached,
                 ii__verbose=ii__verbose,
                 rfe__n_features_to_select=rfe__n_features_to_select,
                 rfe__step=rfe__step,
@@ -152,6 +154,7 @@ def make_lr_model(
     est__verbose=False,
     pre__verbose=False,
     vr__verbose=False,
+    ii__make_cached=True,
     lr__params_list=[{}]
 ):
     from sklearn.ensemble import VotingRegressor
@@ -170,6 +173,7 @@ def make_lr_model(
                 pre__verbose=pre__verbose,
                 oe__fill_na=params["oe__fill_na"],
                 ii__max_iter=params["ii__max_iter"],
+                ii__make_cached=ii__make_cached,
                 ii__verbose=params["ii__verbose"],
                 rfe__n_features_to_select=params["rfe__n_features_to_select"],
                 rfe__verbose=params["rfe__verbose"],
@@ -225,6 +229,7 @@ def make_krr_single_estimator(
     pre__verbose=False,
     oe__fill_na=None,
     ii__max_iter=50,
+    ii__make_cached=True,
     ii__verbose=0,
     rfe__n_features_to_select=57,
     rfe__step=0.03,
@@ -242,6 +247,7 @@ def make_krr_single_estimator(
                 pre__verbose=pre__verbose,
                 oe__fill_na=oe__fill_na,
                 ii__max_iter=ii__max_iter,
+                ii__make_cached=ii__make_cached,
                 ii__verbose=ii__verbose,
                 rfe__n_features_to_select=rfe__n_features_to_select,
                 rfe__step=rfe__step,
@@ -261,6 +267,7 @@ def make_krr_model(
     est__verbose=False,
     pre__verbose=False,
     vr__verbose=False,
+    ii__make_cached=True,
     krr__params_list=[{}]
 ):
     from sklearn.ensemble import VotingRegressor
@@ -275,6 +282,7 @@ def make_krr_model(
                 pre__verbose=pre__verbose,
                 oe__fill_na=params["oe__fill_na"],
                 ii__max_iter=params["ii__max_iter"],
+                ii__make_cached=ii__make_cached,
                 ii__verbose=params["ii__verbose"],
                 rfe__n_features_to_select=params["rfe__n_features_to_select"],
                 rfe__verbose=params["rfe__verbose"],
@@ -332,6 +340,7 @@ def make_tsr_single_estimator(
     random_state=None,
     est__verbose=False,
     pre__verbose=False,
+    pre__make_cached=True,
     kbd__n_bins=20,
     ii__max_iter=50,
     ii__verbose=False,
@@ -339,16 +348,30 @@ def make_tsr_single_estimator(
     from sklearn.pipeline import Pipeline
     from sklearn import base
     from .preprocessing import make_tsr_preprocessor
+    from .cached_estimator import make_cached_estimator
 
     estimator = Pipeline(
         [
-            ('Preprocess', make_tsr_preprocessor(
-                random_state=random_state,
-                pre__verbose=pre__verbose,
-                kbd__n_bins=kbd__n_bins,
-                ii__max_iter=ii__max_iter,
-                ii__verbose=ii__verbose,
-            )),
+            ('Preprocess',
+                make_cached_estimator(
+                    make_tsr_preprocessor(
+                        random_state=random_state,
+                        pre__verbose=pre__verbose,
+                        kbd__n_bins=kbd__n_bins,
+                        ii__max_iter=ii__max_iter,
+                        ii__verbose=ii__verbose,
+                    ),
+                    step_name='Preprocess cached', memory='/kaggle/working/pipeline_cache'
+                )
+                if pre__make_cached else
+                make_tsr_preprocessor(
+                    random_state=random_state,
+                    pre__verbose=pre__verbose,
+                    kbd__n_bins=kbd__n_bins,
+                    ii__max_iter=ii__max_iter,
+                    ii__verbose=ii__verbose,
+                )
+            ),
             ('TSR', base.clone(regressor)),
         ],
         verbose=est__verbose,
@@ -362,6 +385,7 @@ def make_tsr_model(
     pre__verbose=False,
     vr__verbose=False,
     ii__verbose=False,
+    pre__make_cached=True,
     kbd__n_bins=20,
     subprocess__shell=False,
     subprocess__check_call=False,
@@ -398,6 +422,7 @@ def make_tsr_model(
                     random_state=params["random_state"],
                     est__verbose=est__verbose,
                     pre__verbose=pre__verbose,
+                    pre__make_cached=pre__make_cached,
                     kbd__n_bins=kbd__n_bins,
 
                     ii__max_iter=params["ii__max_iter"],
