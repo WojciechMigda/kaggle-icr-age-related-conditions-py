@@ -74,3 +74,65 @@ lr_trial_122 = {
     'rfe__verbose': False,
     'ii__verbose': False,
 }
+
+# 2023-08-08 00:21 -> ICR-LogReg-basic / ICR-LogReg-oev2-cv48, cv=4,8
+lr_trial_208 = {
+    # cv=4,8 0.29762118637858176
+    "ii__max_iter": 70,
+    "lr__C": 0.003582585460112356,
+    "lr__class_weight": 51,
+    "rfe__n_features_to_select": 465,
+    "random_state": 42,
+    'lr__max_iter': 5000,
+    'oe__fill_na': None,
+    'rfe__verbose': False,
+    'ii__verbose': False,
+}
+lr_trial_210 = {
+    # cv=4,8 0.2978282454363922
+    "ii__max_iter": 70,
+    "lr__C": 0.004241048987487019,
+    "lr__class_weight": 51,
+    "rfe__n_features_to_select": 410,
+    "random_state": 42,
+    'lr__max_iter': 5000,
+    'oe__fill_na': None,
+    'rfe__verbose': False,
+    'ii__verbose': False,
+}
+lr_trial_221 = {
+    # cv=4,8 0.29825329838486486
+    "ii__max_iter": 70,
+    "lr__C": 0.003459216841565532,
+    "lr__class_weight": 51,
+    "rfe__n_features_to_select": 405,
+    "random_state": 42,
+    'lr__max_iter': 5000,
+    'oe__fill_na': None,
+    'rfe__verbose': False,
+    'ii__verbose': False,
+}
+lr_trial_232 = {
+    # cv=4,8 0.2983769320723831
+    "ii__max_iter": 70,
+    "lr__C": 0.0037545559038521855,
+    "lr__class_weight": 49,
+    "rfe__n_features_to_select": 430,
+    "random_state": 42,
+    'lr__max_iter': 5000,
+    'oe__fill_na': None,
+    'rfe__verbose': False,
+    'ii__verbose': False,
+}
+lr_trial_231 = {
+    # cv=4,8 0.29838615381937156
+    "ii__max_iter": 70,
+    "lr__C": 0.00271731183846606,
+    "lr__class_weight": 60,
+    "rfe__n_features_to_select": 430,
+    "random_state": 42,
+    'lr__max_iter': 5000,
+    'oe__fill_na': None,
+    'rfe__verbose': False,
+    'ii__verbose': False,
+}
