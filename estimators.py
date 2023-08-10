@@ -37,6 +37,7 @@ def make_xgbr_single_regressor(
         max_delta_step=xgb__params['max_delta_step'],
         reg_lambda=xgb__params['lambda'],
         reg_alpha=xgb__params['alpha'],
+        avoid_rows=xgb__params['avoid_rows'],
     )
     return regressor
 
